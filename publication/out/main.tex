@@ -253,168 +253,7 @@
                 \caption{The graph on the top shows a section of raw(blue) and cleaned(red) of long stick timeseries. The bottom graph shows the raw(brown) and cleaned (green) timeseries of the short stick. The dotted lines on both graphs show the position of the left and right stands of the system}
                 \label{fig:short_long_sticks_clean}
         \end{figure}
-        
-        Three complementary metrics are reported:
-            \begin{itemize}
-              \item \textbf{RMSE}: $\sqrt{\frac{1}{N}\sum_i(y_i - \hat{y}_i)^2}$
-              \item \textbf{NRMSE}: $\sqrt{\frac{\sum_i(y_i - \hat{y}_i)^2}{\sum_i(y_i - \bar{y})^2}}$
-                      (variance-normalised; model is useful if NRMSE~$<1$)
-              \item \textbf{{$R^2 (cod)$}}: $1 - \mathrm{NRMSE}^2$
-              \item \textbf{MAE}: $\frac{1}{N}\sum_i|y_i - \hat{y}_i|$
-            \end{itemize}
-
-
-       
-            \newpage
-            \section{\textbf{Mechanical Model and Coordinates}}
-                    \begin{figure}[ht]
-                        \centering
-                        \includegraphics[width=3in]{figures/angle_config.png}
-                        \caption{Coordinates and Parameter of interest of the the Swinging Kinetic Sticks mechanical system. $r$ is the axis of rotation of the long stick and $e$ for nonstationary axis of rotation of the short stick}
-                        \label{fig:angle_config}
-                    \end{figure}
-                 In this section, the process for turning simultaneous angular position and angular velocity timeseries of the two sticks(rods) into their corresponding Potential Energy $U(t)$, Kinetic Energy $V(t)$ and Total angular momentum $L(t)$. 
-            
-                 The system dynamics of the system can be modeled first as two rigid uniform rods rotating about a single fixed axis. The long rod (angle $\theta_L$) and the short rod (angle $\theta_S$) each have one rotational degree of freedom; they are coupled only through the near-hub neodymium magnets. By simplifying the system and considering short stick as having same axis of rotation for the long stick( at point $P_1$) and short stick(reaching reached $P_2$), each rotating independently in one plane, magnetically coupled at the central axis of rotation $O$. Assume short stick has not coupled to long and determine it potential energy later the axis of rotation of the shorter stick can be later treated as non-stationary. 
-
-                 System coordinates: $q = (\theta_L,\ \theta_S)$.
-
-                 The tracked angle is in degrees, zero pointing up, increasing clockwise or decreasing counter-clockwise. For mechanics we want radians and a right-handed convention. Define, per rod,
-
-                 \begin{align}
-                     \varphi_i(t) \;=\; \varphi_i^{0} \;-\; \frac{\pi}{180}\,\theta_i^{\text{clean}}(t),
-                     \qquad i \in \{L, S\}
-                 \end{align}
-
-                 To determine the kinetic and potential energy of each of the sticks, for each stick in pure rotation motion, calculate the following:.
-                \subsubsection{\textbf{Center of Mass Position (CM)}}
-                    \begin{align}
-                        y_{\mathrm{cm},i}(t) = y_0 + d_i\cos\beta_i(t), 
-                    \end{align}
-                    where $\beta_i(t) = \varphi_i^{\text{s}}(t) + \gamma_i$ is the angle of the CM position vector from the upward vertical, and $\gamma_i \in \{0,\pi\}$ accounts for the CM lying on the pointer side of $O$. $y_O$ is an arbitrary initial or starting point of CM and abstracting out of all dynamics.
-                
-                \subsubsection{\textbf{Angular Velocity}}
-                    Using the unwrapped version of the angle yields a continuous function suitable for differentiation. However using the timeseries which have already been de-noised and quadratically smoothened will still be wrapped. Apply differentiation will amplify high-frequency noise, so apply Savitzky-Golar filter %(using polynomial order $p=3$, window $W \approx 9\text{–}15$ samples $\approx 0.15\text{–}0.25$s)
-
-                    \begin{align}
-                        \varphi_i &= \mathrm{SG}\!\left(\varphi_i,\, W,\, p,\, \text{deriv}=0\right), \\
-                        \omega_i = \dot{\varphi}_i
-                        &= \mathrm{SG}\!\left(\varphi_i,\, W,\, p,\, \text{deriv}=1,\, \delta=\Delta t\right).
-                    \end{align}
-            
-                   Optionally $\alpha_i = \ddot\varphi_i$ from the same filter (`deriv=2`); it is
-                   not needed for $U$, $V$, $L$ but can be used in the consistency checks
-                
-                \subsubsection{\textbf{Magnets Positions}}
-                    In the sticks body frame exist a magnet, at $(r,\,a)$ on the long rod and $(e,\, -b)$ on the short stick
-                    \begin{align}
-                      \mathbf p_i(t) = O + R\!\big(\varphi_i^{\text{s}}(t)\big)\,\mathbf r_{\mathrm{mag},i},
-                      \qquad
-                      R(\varphi)=\begin{pmatrix}\cos\varphi & -\sin\varphi\\ \sin\varphi & \cos\varphi\end{pmatrix}.
-                    \end{align}
-                    
-      
-                 
-            \subsection{\textbf{Potential Energy $U(t)$}}
-            
-            \begin{align}
-                U(t)
-                &= \underbrace{g\left[
-                    m_L d_L \cos\beta_L(t)
-                    + m_S d_S \cos\beta_S(t)
-                \right]}_{V_{\text{grav}}(t)} \nonumber \\
-                &\quad + \underbrace{
-                    U_{\text{mag}}\left(
-                        \rho(t), \hat{\mathbf{s}}(t),
-                        \varphi_L, \varphi_S
-                    \right)
-                }_{V_{\text{mag}}(t)}
-                + C.
-            \end{align}
-            
-            \begin{itemize}
-                \item $V_{\text{grav}}$ also includes the magnet point masses. May add
-                \[
-                    g\,m_{\mathrm{mag},i}\,
-                    \rho_{\mathrm{mag},i}\,
-                    \cos\beta_{\mathrm{mag},i}(t)
-                \]
-                per magnet, with the same form but a different lever arm and phase.
-            
-                \item \  Magnetic term, point-dipole model(not certain whether we should use include this effect of the magnet:
-                \begin{align}
-                    U_{\text{mag}}
-                    &=
-                    \frac{\mu_0}{4\pi\,\rho^3}
-                    \left[
-                        \mathbf{\mu}_1 \cdot \mathbf{\mu}_2
-                        - 3
-                        \left(\mathbf{\mu}_1 \cdot \hat{\mathbf{s}}\right)
-                        \left(\mathbf{\mu}_2 \cdot \hat{\mathbf{s}}\right)
-                    \right].
-                \end{align}
-                Here, each $\mathbf{\mu}_k$ is rotated into the frame by
-                $R(\varphi_k)$.
-            
-                \item The constant $C$ is chosen such that
-                \[
-                    \min_t U(t) = 0
-                \]
-                over the analyzed record.
-            \end{itemize}
-
-            \subsection{\textbf{Kinetic Energy $V(t)$}}
-                \begin{align}
-                    \,V(t) \;=\; \tfrac12 I_L\,\omega_L(t)^2 \;+\; \tfrac12 I_S\,\omega_S(t)^2\,
-                \end{align}
-                
-                We determine the total and the per-stick split $V_L, V_S$. $V$ may be dominated by
-                differentiation error
-
-            \subsection{\textbf{Total angular momentum $L(t)$}}
-                \begin{align}
-                    \,L(t) \;=\; I_L\,\omega_L(t) \;+\; I_S\,\omega_S(t)\
-                \end{align}
-                Report the total and the per-stick split. Note that $L$ about $O$ is not
-                conserved: gravity exerts torque $\tau_{\text{grav}}(t) = -g\big[m_L d_L\sin\beta_L
-                + m_S d_S\sin\beta_S\big]$ about $O$, and the magnetic coupling exchanges angular
-                momentum between the rods and, to a small extent, with the field. The measured
-                $L(t)$ and its derivative are therefore also diagnostics %%(Section 7)#, not just outputs.
-
-            \subsection{\textbf{Total Mechanical Energy}}
-                \begin{align}
-                    E(t) = U(t) + V(t)
-                \end{align}
-                 $E(t)$ is produced alongside the timeseries and using this we determine the energy contributiong from the short and long stick.
-                % decay is the damping signature and its short-window flatness is the main
-                % calibration/validation lever.
-                
-                
-                            
-
-        % \begin{figure}[ht]
-        %         \centering
-        %         \includegraphics[width=1 \linewidth]{figures/long_short_sticks_raw_n_cleaned.png}
-        %         \centering
-        %         \caption{The graph on the top shows a section of raw(blue) and cleaned(red) of long stick timeseries. The bottom graph shows the raw(brown) and cleaned (green) timeseries of the short stick. The dotted lines on both graphs show the position of the left and right stands of the system}
-        %         \label{fig:short_long_sticks_clean}
-        % \end{figure}
-
-        \newpage
-       
-        \section{Embedding and Feature Construction}
-            In building set if supervised input vector and output forecast labels  for for over the top or next postion prediction, the choice of which feature is very important for characterize the best state or coordinate representation that is able to capture the dynamics of the kinetic swinging sticks motion. For forecasting, generally constructing the $X$ via Takens'
-            delay embedding theorem with embedding dimension and delay determined empirically depending of the system being studied. However, the choice of input use for the delay embedding vectors affects the accuarcy of your forecast since they form or used as basis for determining the mapping of a state to it prediction next state.
-            
-            Fundamentally, obtaining a good model is linked to the coordinate system in which the dynamics are measured. Considering the state of the long or short stick is represented as an angle, forecasting the next state which is also an angle in degrees or radian, using Takens' delay embedding of timeseries is simple just as forecasting a time to the top, will required Taken embedding of over the top time positions to for $X$ used in building the mapping for each forecast.
-
-            However, muitiple information in data presents different ways of building a training set data $X_L$ and $Y_L$; using  time, angle, angular velocity, time to over the top or change in time to over the top and clock hour positions.
-
-            For whichever infrmation set used in building $X_L$  and $Y_L$, a model builds a map of using predicting target $y_t$ from $x_t$. For predictiion using local linear model at the core of method that leverages a kernel for determined weights used in 
-
-             \subsection{Computing Distance in Delay Vectors of Angles}
-                The first principles of a local linear model is selection of vectors that represent or characterize the 
-\newpage 
+    
 \subsection{\textbf{Circular Delay Embedding for the Angular State Evolution}}
 \label{ssec:circular_embedding}
 
@@ -654,6 +493,159 @@
         univariate in the long-stick angle alone despite the coupled,
         two-arm nature of the physical system.
 
+
+
+       
+    
+        \section{Mechanical Model and Coordinates}
+            \begin{figure}[ht]
+                \centering
+                \includegraphics[width=3in]{figures/angle_config.png}
+                \caption{Coordinates and Parameter of interest of the the Swinging Kinetic Sticks mechanical system. $r$ is the axis of rotation of the long stick and $e$ for nonstationary axis of rotation of the short stick}
+                \label{fig:angle_config}
+                    \end{figure}
+                 In this section, the process for turning simultaneous angular position and angular velocity timeseries of the two sticks(rods) into their corresponding Potential Energy $U(t)$, Kinetic Energy $V(t)$ and Total angular momentum $L(t)$. 
+            
+                 The system dynamics of the system can be modeled first as two rigid uniform rods rotating about a single fixed axis. The long rod (angle $\theta_L$) and the short rod (angle $\theta_S$) each have one rotational degree of freedom; they are coupled only through the near-hub neodymium magnets. By simplifying the system and considering short stick as having same axis of rotation for the long stick( at point $P_1$) and short stick(reaching reached $P_2$), each rotating independently in one plane, magnetically coupled at the central axis of rotation $O$. Assume short stick has not coupled to long and determine it potential energy later the axis of rotation of the shorter stick can be later treated as non-stationary. 
+
+                 System coordinates: $q = (\theta_L,\ \theta_S)$.
+
+                 The tracked angle is in degrees, zero pointing up, increasing clockwise or decreasing counter-clockwise. For mechanics we want radians and a right-handed convention. Define, per rod,
+
+                 \begin{align}
+                     \varphi_i(t) \;=\; \varphi_i^{0} \;-\; \frac{\pi}{180}\,\theta_i^{\text{clean}}(t),
+                     \qquad i \in \{L, S\}
+                 \end{align}
+
+                 To determine the kinetic and potential energy of each of the sticks, for each stick in pure rotation motion, calculate the following:.
+                \subsubsection{Center of Mass Position (CM)}
+                    \begin{align}
+                        y_{\mathrm{cm},i}(t) = y_0 + d_i\cos\beta_i(t), 
+                    \end{align}
+                    where $\beta_i(t) = \varphi_i^{\text{s}}(t) + \gamma_i$ is the angle of the CM position vector from the upward vertical, and $\gamma_i \in \{0,\pi\}$ accounts for the CM lying on the pointer side of $O$. $y_O$ is an arbitrary initial or starting point of CM and abstracting out of all dynamics.
+                
+                \subsubsection{\textbf{Angular Velocity}}
+                    Using the unwrapped version of the angle yields a continuous function suitable for differentiation. However using the timeseries which have already been de-noised and quadratically smoothened will still be wrapped. Apply differentiation will amplify high-frequency noise, so apply Savitzky-Golar filter %(using polynomial order $p=3$, window $W \approx 9\text{–}15$ samples $\approx 0.15\text{–}0.25$s)
+
+                    \begin{align}
+                        \varphi_i &= \mathrm{SG}\!\left(\varphi_i,\, W,\, p,\, \text{deriv}=0\right), \\
+                        \omega_i = \dot{\varphi}_i
+                        &= \mathrm{SG}\!\left(\varphi_i,\, W,\, p,\, \text{deriv}=1,\, \delta=\Delta t\right).
+                    \end{align}
+            
+                   Optionally $\alpha_i = \ddot\varphi_i$ from the same filter (`deriv=2`); it is
+                   not needed for $U$, $V$, $L$ but can be used in the consistency checks
+                
+                \subsubsection{\textbf{Magnets Positions}}
+                    In the sticks body frame exist a magnet, at $(r,\,a)$ on the long rod and $(e,\, -b)$ on the short stick
+                    \begin{align}
+                      \mathbf p_i(t) = O + R\!\big(\varphi_i^{\text{s}}(t)\big)\,\mathbf r_{\mathrm{mag},i},
+                      \qquad
+                      R(\varphi)=\begin{pmatrix}\cos\varphi & -\sin\varphi\\ \sin\varphi & \cos\varphi\end{pmatrix}.
+                    \end{align}
+                    
+      
+                 
+            \subsection{\textbf{Potential Energy $U(t)$}}
+            
+            \begin{align}
+                U(t)
+                &= \underbrace{g\left[
+                    m_L d_L \cos\beta_L(t)
+                    + m_S d_S \cos\beta_S(t)
+                \right]}_{V_{\text{grav}}(t)} \nonumber \\
+                &\quad + \underbrace{
+                    U_{\text{mag}}\left(
+                        \rho(t), \hat{\mathbf{s}}(t),
+                        \varphi_L, \varphi_S
+                    \right)
+                }_{V_{\text{mag}}(t)}
+                + C.
+            \end{align}
+            
+            \begin{itemize}
+                \item $V_{\text{grav}}$ also includes the magnet point masses. May add
+                \[
+                    g\,m_{\mathrm{mag},i}\,
+                    \rho_{\mathrm{mag},i}\,
+                    \cos\beta_{\mathrm{mag},i}(t)
+                \]
+                per magnet, with the same form but a different lever arm and phase.
+            
+                \item \  Magnetic term, point-dipole model(not certain whether we should use include this effect of the magnet:
+                \begin{align}
+                    U_{\text{mag}}
+                    &=
+                    \frac{\mu_0}{4\pi\,\rho^3}
+                    \left[
+                        \mathbf{\mu}_1 \cdot \mathbf{\mu}_2
+                        - 3
+                        \left(\mathbf{\mu}_1 \cdot \hat{\mathbf{s}}\right)
+                        \left(\mathbf{\mu}_2 \cdot \hat{\mathbf{s}}\right)
+                    \right].
+                \end{align}
+                Here, each $\mathbf{\mu}_k$ is rotated into the frame by
+                $R(\varphi_k)$.
+            
+                \item The constant $C$ is chosen such that
+                \[
+                    \min_t U(t) = 0
+                \]
+                over the analyzed record.
+            \end{itemize}
+
+            \subsection{\textbf{Kinetic Energy $V(t)$}}
+                \begin{align}
+                    \,V(t) \;=\; \tfrac12 I_L\,\omega_L(t)^2 \;+\; \tfrac12 I_S\,\omega_S(t)^2\,
+                \end{align}
+                
+                We determine the total and the per-stick split $V_L, V_S$. $V$ may be dominated by
+                differentiation error
+
+            \subsection{\textbf{Total angular momentum $L(t)$}}
+                \begin{align}
+                    \,L(t) \;=\; I_L\,\omega_L(t) \;+\; I_S\,\omega_S(t)\
+                \end{align}
+                Report the total and the per-stick split. Note that $L$ about $O$ is not
+                conserved: gravity exerts torque $\tau_{\text{grav}}(t) = -g\big[m_L d_L\sin\beta_L
+                + m_S d_S\sin\beta_S\big]$ about $O$, and the magnetic coupling exchanges angular
+                momentum between the rods and, to a small extent, with the field. The measured
+                $L(t)$ and its derivative are therefore also diagnostics %%(Section 7)#, not just outputs.
+
+            \subsection{\textbf{Total Mechanical Energy}}
+                \begin{align}
+                    E(t) = U(t) + V(t)
+                \end{align}
+                 $E(t)$ is produced alongside the timeseries and using this we determine the energy contributiong from the short and long stick.
+                % decay is the damping signature and its short-window flatness is the main
+                % calibration/validation lever.
+                
+                
+                            
+
+        % \begin{figure}[ht]
+        %         \centering
+        %         \includegraphics[width=1 \linewidth]{figures/long_short_sticks_raw_n_cleaned.png}
+        %         \centering
+        %         \caption{The graph on the top shows a section of raw(blue) and cleaned(red) of long stick timeseries. The bottom graph shows the raw(brown) and cleaned (green) timeseries of the short stick. The dotted lines on both graphs show the position of the left and right stands of the system}
+        %         \label{fig:short_long_sticks_clean}
+        % \end{figure}
+
+        \newpage
+       
+        \section{Embedding and Feature Construction}
+            In building set if supervised input vector and output forecast labels  for for over the top or next postion prediction, the choice of which feature is very important for characterize the best state or coordinate representation that is able to capture the dynamics of the kinetic swinging sticks motion. For forecasting, generally constructing the $X$ via Takens'
+            delay embedding theorem with embedding dimension and delay determined empirically depending of the system being studied. However, the choice of input use for the delay embedding vectors affects the accuarcy of your forecast since they form or used as basis for determining the mapping of a state to it prediction next state.
+            
+            Fundamentally, obtaining a good model is linked to the coordinate system in which the dynamics are measured. Considering the state of the long or short stick is represented as an angle, forecasting the next state which is also an angle in degrees or radian, using Takens' delay embedding of timeseries is simple just as forecasting a time to the top, will required Taken embedding of over the top time positions to for $X$ used in building the mapping for each forecast.
+
+            However, muitiple information in data presents different ways of building a training set data $X_L$ and $Y_L$; using  time, angle, angular velocity, time to over the top or change in time to over the top and clock hour positions.
+
+            For whichever infrmation set used in building $X_L$  and $Y_L$, a model builds a map of using predicting target $y_t$ from $x_t$. For predictiion using local linear model at the core of method that leverages a kernel for determined weights used in 
+
+             \subsection{Computing Distance in Delay Vectors of Angles}
+                The first principles of a local linear model is selection of vectors that represent or characterize the 
+
             
        
 
@@ -661,6 +653,15 @@
 
     \section{Results}
         In this, we provide results obtained from baseline ablation study from  Echo State Networks (ESN), Support Vector Regression (SVR), Gaussian Process Regression or Bayesian (Probabilistic) (GPR), Multilayer Perceptron (MLP), Random Forest Regression (RF), Koopman operator(EDMD) and Long Short Term Memory (LSTM). For simpler prediction, we used the delay embedded vector angle representation.
+
+        Three complementary metrics are reported:
+            \begin{itemize}
+              \item \textbf{RMSE}: $\sqrt{\frac{1}{N}\sum_i(y_i - \hat{y}_i)^2}$
+              \item \textbf{NRMSE}: $\sqrt{\frac{\sum_i(y_i - \hat{y}_i)^2}{\sum_i(y_i - \bar{y})^2}}$
+                      (variance-normalised; model is useful if NRMSE~$<1$)
+              \item \textbf{{$R^2 (cod)$}}: $1 - \mathrm{NRMSE}^2$
+              \item \textbf{MAE}: $\frac{1}{N}\sum_i|y_i - \hat{y}_i|$
+            \end{itemize}
 
         \subsection{Ablation Protocol}
             For each model, we held all hyper-parameters at their default values
@@ -684,51 +685,7 @@
         RBF kernel performs well and offers strong practical guarantees via its
         convex optimization. MLP and RF are the most computationally efficient models
         and achieve competitive but slightly inferior NRMSE.
-
-\begin{figure*}[h]
-    \centering
-
-    \subfloat[Long Stick Predictions]{
-        \includegraphics[width=0.48\textwidth]{figures/long_sticks_timeseries_ablation_models.png}
-        \label{fig:appendix_long_timeseries}
-    }
-    \hfill
-    \subfloat[Short Stick Predictions]{
-        \includegraphics[width=0.48\textwidth]{figures/short_stick_ablation_of_models.png}
-        \label{fig:appendix_short_timeseries}
-    }
-
-    \vspace{1em} % Adjust vertical spacing as needed
-
-    \subfloat[Long Stick Ablation Metrics]{
-        \includegraphics[width=0.48\textwidth]{figures/long_abaltion_metrics.png}
-        \label{fig:appendix_long_metrics}
-    }
-    \hfill
-    \subfloat[Short Stick Ablation Metrics]{
-        \includegraphics[width=0.48\textwidth]{figures/short_abaltion_metrics.png}
-        \label{fig:appendix_short_metrics}
-    }
-
-    \caption{Top row: Comparison of one-step-ahead predictions for the long-stick angle and short-stick angle time series. The ground-truth trajectory is shown alongside model predictions for ESN, SVR, GPR, MLP, RF, EDMD, and LSTM. The NRMSE metric quantifies predictive accuracy. Kernel-based methods (GPR, SVR) and operator-theoretic EDMD demonstrate superior accuracy with minimal phase lag and reduced error near sharp nonlinear transitions, whereas recurrent (LSTM) and reservoir-based (ESN) models show larger deviations in highly nonlinear regions. Bottom row: Ablation study metrics for long- and short-stick time series.}
-    \label{fig:appendix_combined_comparison}
-\end{figure*}
-
             
-% =====================================================
-% LONG-STICK TABLES WITH FULL GRID + BOLD HEADER
-% =====================================================
-
-% ================= LONG STICK SUMMARY =================
-
-
-        % %Hiten Start here
-        % % SHORT STICK EVALutation TABLES
-% =====================================================
-% SHORT-STICK TABLES WITH FULL GRID + BOLD HEADER
-% =====================================================
-
-% \input{./short_stick_ablation_tables.tex}
 
     % ===========================================================================
     \section{Conclusion}
