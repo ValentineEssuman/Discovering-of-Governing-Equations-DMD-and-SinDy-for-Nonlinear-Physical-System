@@ -10,7 +10,7 @@ publication/papers/
 *.out
 *.toc
 *.lof
-*.lot
+*.lotg
 *.fls
 *.fdb_latexmk
 *.synctex.gz
